@@ -1,6 +1,11 @@
-const router = require('express').Router();
-const userController = require('../controllers/user');
+//Initialisation du router
+const express = require('express');
+const router = express.Router();
 
-router.post('/signup', userController.signup);
+//Import du code métier
+const userCtrl = require('../controllers/user');
 
-module.export = router;
+router.post('/users/register', userCtrl.register);
+router.post('/users/login', userCtrl.login);
+
+module.exports = router;
