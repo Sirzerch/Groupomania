@@ -5,7 +5,6 @@ const router = express.Router();
 //Import du code métier
 const userCtrl = require('../controllers/user');
 
-
 //Routes
 router.post('/users/register', userCtrl.register);
 router.post('/users/login', userCtrl.login);
