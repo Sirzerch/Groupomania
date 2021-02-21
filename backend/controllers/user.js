@@ -58,77 +58,77 @@ exports.register = (req, res, next) => {
         })
         .catch(() => res.status(500).json({ error: 'Erreur serveur' }));
 
-},
+}
 
-    exports.login = (req, res, next) => {
-        //Paramètres de requête
-        let email = req.body.email;
-        let password = req.body.password;
+exports.login = (req, res, next) => {
+    //Paramètres de requête
+    let email = req.body.email;
+    let password = req.body.password;
 
-        //Vérification des champs obligatoires
-        if (email == null || password == null) {
-            return res.status(400).json({ error: 'Champs null' });
-        }
-
-        models.User.findOne({
-            where: { email: email }
-        })
-            .then(user => {
-                if (!user) {
-                    return res.status(401).json({ error: 'Utilisateur non trouvé !' });
-                }
-                //Compare le mot de passe envoyer par le frontend avec le mot de passe dans la collection User
-                bcrypt.compare(req.body.password, user.password)
-                    .then(valid => {
-                        if (!valid) {
-                            return res.status(401).json({ error: 'Mot de passe incorrect !' });
-                        }
-                        res.status(200).json({
-                            userId: user.id,
-                            //Signe un token avec jsonwebtoken  
-                            token: jwt.sign(
-                                {
-                                    userId: user.id,
-                                    isAdmin: user.isAdmin
-                                },
-                                'RANDOM_TOKEN_SECRET',
-                                { expiresIn: '1h' }
-                            )
-                        });
-                    })
-                    .catch(error => res.status(500).json({ error }))
-            })
-            .catch(error => res.status(500).json({ error }));
-
-    },
-
-    exports.getUserProfile = (req, res, next) => {
-        // Récupération de l'en-tête d'authorisation
-        let headerAuth = req.headers['authorization'];
-
-        // Verifier que ce token est valide pour faire une requête en BDD
-        let userId = auth.getUserId(headerAuth);
-
-        // Vérifier que userId n'est pas négatif (par sécurité)
-        if (userId < 0)
-            return res.status(400).json({ error: 'Token non valide' });
-
-        // Si tout va bien, on fait un appel ORM(sequelize) pour récupérer les informations de l'utilisateur en BDD
-        models.User.findOne({
-            attributes: ['id', 'email', 'username', 'bio'],
-            where: { id: userId }
-        })
-            .then((user) => {
-                if (user) {
-                    res.status(201).json(user);
-                } else {
-                    res.status(404).json({ error: 'Utilisateur non trouvé' });
-                }
-            })
-            .catch((err) => {
-                res.status(500).json({ error: 'Impossible de récupérer l\'utilisateur' });
-            });
+    //Vérification des champs obligatoires
+    if (email == null || password == null) {
+        return res.status(400).json({ error: 'Champs null' });
     }
+
+    models.User.findOne({
+        where: { email: email }
+    })
+        .then(user => {
+            if (!user) {
+                return res.status(401).json({ error: 'Utilisateur non trouvé !' });
+            }
+            //Compare le mot de passe envoyer par le frontend avec le mot de passe dans la collection User
+            bcrypt.compare(req.body.password, user.password)
+                .then(valid => {
+                    if (!valid) {
+                        return res.status(401).json({ error: 'Mot de passe incorrect !' });
+                    }
+                    res.status(200).json({
+                        userId: user.id,
+                        //Signe un token avec jsonwebtoken  
+                        token: jwt.sign(
+                            {
+                                userId: user.id,
+                                isAdmin: user.isAdmin
+                            },
+                            'RANDOM_TOKEN_SECRET',
+                            { expiresIn: '1h' }
+                        )
+                    });
+                })
+                .catch(error => res.status(500).json({ error }))
+        })
+        .catch(error => res.status(500).json({ error }));
+
+}
+
+exports.getUserProfile = (req, res, next) => {
+    // Récupération de l'en-tête d'authorisation
+    let headerAuth = req.headers['authorization'];
+
+    // Verifier que ce token est valide pour faire une requête en BDD
+    let userId = auth.getUserId(headerAuth);
+
+    // Vérifier que userId n'est pas négatif (par sécurité)
+    if (userId < 0)
+        return res.status(400).json({ error: 'Token non valide' });
+
+    // Si tout va bien, on fait un appel ORM(sequelize) pour récupérer les informations de l'utilisateur en BDD
+    models.User.findOne({
+        attributes: ['id', 'email', 'username', 'bio'],
+        where: { id: userId }
+    })
+        .then((user) => {
+            if (user) {
+                res.status(201).json(user);
+            } else {
+                res.status(404).json({ error: 'Utilisateur non trouvé' });
+            }
+        })
+        .catch((err) => {
+            res.status(500).json({ error: 'Impossible de récupérer l\'utilisateur' });
+        });
+}
 
 exports.updateUserProfile = (req, res, next) => {
     // Récupération de l'en-tête d'authorisation
@@ -174,6 +174,70 @@ exports.updateUserProfile = (req, res, next) => {
             // Sinon envoyer une erreur
             return res.status(500).json({ error: 'Impossible de vérifier l\'utilisateur' });
         });
+}
+
+exports.deleteUserProfile = (req, res, next) => {
+    // Récupération de l'en-tête d'authorisation
+    let headerAuth = req.headers['authorization'];
+
+    // Verifier que ce token est valide pour faire une requête en BDD
+    let userId = auth.getUserId(headerAuth);
+
+    // Récupérer l'utilisateur dans la base de données
+    models.User.findOne({
+        where: { id: userId }
+    })
+        .then(() => {
+            // Supression des messages utilisateur du mur
+            models.Message.destroy({
+                where: { userId: userId }
+            })
+                .then(() => {
+                    models.User.destroy({
+                        where: { id: userId }
+                    })
+                        .then((userId) => {
+                            if (userId) {
+                                // Désinscription effectuée
+                                return res.status(201).json({ message: 'Utilisateur supprimé !' });
+                            } else {
+                                // Une erreur est survenue
+                                return res.status(500).json({ error: 'user not found in DB' });
+                            }
+                        })
+                        .catch((err) => {
+                            return res.status(500).json({ error: 'unable to unsubscribe', err });
+                        });
+                })
+                .catch((err) => {
+                    return res.status(500).json({ err });
+                });
+        })
+        .catch((err) => {
+            console.log(userFound.id);
+            // Sinon envoyer une erreur
+            return res.status(500).json({ error: 'unable to verify user', err });
+        });
+
+    /*
+        // WIP
+        function(userFound, done){
+          // Suppression des images uploadés (si presentes)
+          models.Message.findOne({
+            attributes : ['attachment'],
+            where : {userId : userId}
+          })
+          .then(function(messageId){
+              let filename = messageId.attachment.split('/images/')[1];
+              fs.unlink(`images/${filename}`);
+              done(null, userFound);
+          })
+          .catch(function(err){
+              console.log(messageId);
+              return res.status(500).json({'error':'unable to delete file!'});
+          })
+        },
+    */
 }
 
 
