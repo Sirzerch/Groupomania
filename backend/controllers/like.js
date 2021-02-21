@@ -148,7 +148,7 @@ exports.disLiked = (req, res, next) => {
                                                         }
                                                     })
                                                     .catch(() => {
-                                                        res.status(500).json({ error: 'cannot message like counter'  });
+                                                        res.status(500).json({ error: 'cannot message like counter' });
                                                     });
                                             })
                                             .catch(() => {
