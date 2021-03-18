@@ -1,0 +1,13 @@
+<nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <div class="container-fluid">
+      <a class="navbar-brand" routerLink="">Groupomania</a>
+      <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
+        <div class="navbar-nav">
+          <a class="nav-link" routerLink="users/register" *ngIf="!isAuth$">S'enregister</a>
+          <a class="nav-link" routerLink="users/login" *ngIf="!isAuth$">Se connecter</a>
+          <a class="nav-link" routerlink="messages" *ngIf="isAuth$" style="cursor:pointer">Publications</a>
+          <a class="nav-link" (click)="onLogout()" *ngIf="isAuth$" style="cursor:pointer">Déconnexion </a>
+        </div>
+      </div>
+    </div>
+  </nav>

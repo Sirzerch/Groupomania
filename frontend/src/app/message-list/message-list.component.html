@@ -1,0 +1,10 @@
+<p *ngIf="messages.length <= 0">
+  Pas de messages à afficher
+</p>
+<p class="list-title" *ngIf="messages.length > 0">Messages</p>
+<div class="message-list" *ngIf="messages.length  > 0">
+  <div class="message-list-item" *ngFor="let message of messages" (click)="onClickMessage(message.id)">
+    <h4>{{ message.title }}</h4>
+    <p>{{ message.content }}</p>
+  </div>
+</div>
